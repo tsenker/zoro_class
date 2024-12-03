@@ -24,6 +24,7 @@ import pytesseract
 from pdf2image import convert_from_path
 from PIL import Image
 import os
+from PIL import ImageOps
 
 # Ensure Tesseract is installed and set up
 # Replace with your tesseract installation path if needed (for Windows)
@@ -240,7 +241,7 @@ with open(file_path, 'r') as file:
 
 ######
 
-k_a_path = "C:/Users/mxjar/Documents/khordeh_avesta.pdf"
+k_a_path = "C:/Users/mxjar/Documents/khordeh_avesta_edited.pdf"
 
 # Convert PDF pages to images
 pages = convert_from_path(k_a_path, dpi=300)  # dpi=300 for better quality
@@ -251,7 +252,7 @@ image_dir = "pdf_images"
 #    os.makedirs(image_dir)
 
 # Initialize an empty string to store the extracted text
-pdf_text = ""
+k_a_text = ""
 
 # Iterate through all the pages and extract text
 for page_num, page in enumerate(pages):
@@ -264,28 +265,28 @@ for page_num, page in enumerate(pages):
     text = pytesseract.image_to_string(page, config=custom_config)
 
     # Append extracted text from this page to the complete PDF text
-    pdf_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+    k_a_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
 
 # Define the predefined path to save the file
-file_path = r'C:/Users/mxjar/Documents/khordeh_avesta.txt'  # For Windows
+file_path = r'C:/Users/mxjar/Documents/khordeh_avesta_edited.txt'  # For Windows
 # file_path = '/path/to/directory/myfile.txt'  # For Linux/macOS
 
 # Open the file in write mode and save the content
 with open(file_path, 'w', encoding='utf-8') as file:
-    file.write(pdf_text)
+    file.write(k_a_text)
 
 # Output the extracted text
-print(pdf_text)
+print(k_a_text)
 
 with open(file_path, 'r') as file:
-    pdf_text = file.read()
+    k_a_text = file.read()
 
 ######
 
-k_y_path = "C:/Users/mxjar/Documents/kanga_yashts_edited.pdf"
+s_a_path = "C:/Users/mxjar/Documents/selected_yasna_edited.pdf"
 
 # Convert PDF pages to images
-pages = convert_from_path(k_y_path, dpi=300)  # dpi=300 for better quality
+pages = convert_from_path(s_a_path, dpi=300)  # dpi=300 for better quality
 
 # Directory to save images (optional)
 image_dir = "pdf_images"
@@ -293,7 +294,7 @@ image_dir = "pdf_images"
 #    os.makedirs(image_dir)
 
 # Initialize an empty string to store the extracted text
-pdf_text = ""
+s_a_text = ""
 
 # Iterate through all the pages and extract text
 for page_num, page in enumerate(pages):
@@ -302,12 +303,116 @@ for page_num, page in enumerate(pages):
     #page.save(image_path, 'PNG')
 
     # Use PyTesseract to perform OCR on the image
-    #custom_config = r'-l eng --psm 3 tessedit_char_blacklist=0123456789.,()[]'
     custom_config = r'-l eng --psm 3'
     text = pytesseract.image_to_string(page, config=custom_config)
 
     # Append extracted text from this page to the complete PDF text
-    pdf_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+    s_a_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+
+# Define the predefined path to save the file
+file_path = r'C:/Users/mxjar/Documents/selected_yasna_edited.txt'  # For Windows
+# file_path = '/path/to/directory/myfile.txt'  # For Linux/macOS
+
+# Open the file in write mode and save the content
+with open(file_path, 'w', encoding='utf-8') as file:
+    file.write(s_a_text)
+
+# Output the extracted text
+print(pdf_text)
+
+with open(file_path, 'r') as file:
+    pdf_text = file.read()
+
+
+######
+
+z_g_e_path = "C:/Users/mxjar/Documents/zoro_gathas_edited.pdf"
+
+# Convert PDF pages to images
+pages = convert_from_path(z_g_e_path, dpi=300)  # dpi=300 for better quality
+
+# Directory to save images (optional)
+image_dir = "pdf_images"
+#if not os.path.exists(image_dir):
+#    os.makedirs(image_dir)
+
+# Initialize an empty string to store the extracted text
+z_g_e_text = ""
+
+# Iterate through all the pages and extract text
+for page_num, page in enumerate(pages):
+    # Save the page as an image file (optional)
+    #image_path = f"{image_dir}/page_{page_num + 1}.png"
+    #page.save(image_path, 'PNG')
+
+    # Use PyTesseract to perform OCR on the image
+    custom_config = r'-l eng --psm 3'
+    text = pytesseract.image_to_string(page, config=custom_config)
+
+    # Append extracted text from this page to the complete PDF text
+    z_g_e_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+
+# Define the predefined path to save the file
+file_path = r'C:/Users/mxjar/Documents/zoro_gathas_edited.txt'  # For Windows
+# file_path = '/path/to/directory/myfile.txt'  # For Linux/macOS
+
+# Open the file in write mode and save the content
+with open(file_path, 'w', encoding='utf-8') as file:
+    file.write(z_g_e_text)
+    
+# Output the extracted text
+print(z_g_e_text)
+
+with open(file_path, 'r') as file:
+    z_g_e_text = file.read()
+    
+######
+
+z_t_path = "C:/Users/mxjar/Documents/zoro_text_edited_grey.pdf"
+
+# Convert PDF pages to images
+pages = convert_from_path(z_t_path, dpi=300)  # dpi=300 for better quality
+
+# Directory to save images (optional)
+image_dir = "pdf_images"
+#if not os.path.exists(image_dir):
+#    os.makedirs(image_dir)
+
+# Initialize an empty string to store the extracted text
+z_t_text = ""
+
+# Iterate through all the pages and extract text
+for page_num, page in enumerate(pages):
+    # Save the page as an image file (optional)
+    #image_path = f"{image_dir}/page_{page_num + 1}.png"
+    #page.save(image_path, 'PNG')
+    page = ImageOps.expand(page, border=500, fill="white")
+    # Use PyTesseract to perform OCR on the image
+    custom_config = r'-l eng --psm 3'
+
+    text = pytesseract.image_to_string(page.rotate(270), config=custom_config)
+
+    # Append extracted text from this page to the complete PDF text
+    
+    z_t_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+
+# Define the predefined path to save the file
+file_path = r'C:/Users/mxjar/Documents/zoro_text_edited.txt'  # For Windows
+# file_path = '/path/to/directory/myfile.txt'  # For Linux/macOS
+
+# Open the file in write mode and save the content
+with open(file_path, 'w', encoding='utf-8') as file:
+    file.write(z_t_text)
+
+# Output the extracted text
+print(z_t_text)
+
+with open(file_path, 'r') as file:
+    z_t_text = file.read()
+
+print('hello world')
+
+######
 
 # Define the predefined path to save the file
 file_path = r'C:/Users/mxjar/Documents/kanga_yashts_edited.txt'  # For Windows
@@ -322,10 +427,6 @@ print(pdf_text)
 
 with open(file_path, 'r',encoding="utf8") as file:
     pdf_text = file.read()
-
-
-
-
 
 
 ## let's start text cleaning the kanga yashts
@@ -378,6 +479,62 @@ ky_txt_limited = ky_txt_spaced[ky_txt_spaced['eng_score'] >= 0.3].reset_index(dr
 
 
 
+z_t1_path = "C:/Users/mxjar/Documents/zte_test1.pdf"
+
+# Convert PDF pages to images
+pages = convert_from_path(z_t1_path, dpi=300)  # dpi=300 for better quality
+
+# Directory to save images (optional)
+image_dir = "pdf_images"
+#if not os.path.exists(image_dir):
+#    os.makedirs(image_dir)
+
+# Initialize an empty string to store the extracted text
+z_t1_text = ""
+
+# Iterate through all the pages and extract text
+for page_num, page in enumerate(pages):
+    # Save the page as an image file (optional)
+    #image_path = f"{image_dir}/page_{page_num + 1}.png"
+    #page.save(image_path, 'PNG')
+    
+    page = ImageOps.expand(page, border=500, fill="white")
+    # Use PyTesseract to perform OCR on the image
+    custom_config = r'-l eng --psm 6'
+    text = pytesseract.image_to_string(page.rotate(270), config=custom_config)
+
+    # Append extracted text from this page to the complete PDF text
+    z_t1_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+
+
+import cv2
+import numpy as np
+
+image = np.array(page)
+h, w, _ = image.shape
+boxes = pytesseract.image_to_boxes(image)
+for b in boxes.splitlines():
+    b = b.split()
+    x, y, w, h = int(b[1]), int(b[2]), int(b[3]), int(b[4])
+    cv2.rectangle(image, (x, h), (w, y), (0, 255, 0), 2)
+cv2.imwrite("C:/Users/mxjar/Documents/boxes_scan.jpg", image)
+
+
+
+
+# Define the predefined path to save the file
+file_path = r'C:/Users/mxjar/Documents/zoro_text_edited2.txt'  # For Windows
+# file_path = '/path/to/directory/myfile.txt'  # For Linux/macOS
+
+# Open the file in write mode and save the content
+with open(file_path, 'w', encoding='utf-8') as file:
+    file.write(z_t1_text)
+
+# Output the extracted text
+print(z_t1_text)
+
+with open(file_path, 'r') as file:
+    z_t1_text = file.read()
 
 
 
