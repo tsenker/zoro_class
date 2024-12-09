@@ -479,10 +479,10 @@ ky_txt_limited = ky_txt_spaced[ky_txt_spaced['eng_score'] >= 0.3].reset_index(dr
 
 
 
-z_t1_path = "C:/Users/mxjar/Documents/zte_test1.pdf"
+ztg_path = "C:/Users/mxjar/Documents/zoro_text_grey_pg2.pdf"
 
 # Convert PDF pages to images
-pages = convert_from_path(z_t1_path, dpi=300)  # dpi=300 for better quality
+pages = convert_from_path(ztg_path, dpi=300)  # dpi=300 for better quality
 
 # Directory to save images (optional)
 image_dir = "pdf_images"
@@ -490,7 +490,7 @@ image_dir = "pdf_images"
 #    os.makedirs(image_dir)
 
 # Initialize an empty string to store the extracted text
-z_t1_text = ""
+ztg_text = ""
 
 # Iterate through all the pages and extract text
 for page_num, page in enumerate(pages):
@@ -500,11 +500,11 @@ for page_num, page in enumerate(pages):
     
     page = ImageOps.expand(page, border=500, fill="white")
     # Use PyTesseract to perform OCR on the image
-    custom_config = r'-l eng --psm 6'
+    custom_config = r'-l eng --psm 3'
     text = pytesseract.image_to_string(page.rotate(270), config=custom_config)
 
     # Append extracted text from this page to the complete PDF text
-    z_t1_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+    ztg_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
 
 
 import cv2
@@ -535,6 +535,109 @@ print(z_t1_text)
 
 with open(file_path, 'r') as file:
     z_t1_text = file.read()
+
+
+
+
+
+
+
+
+
+
+
+
+
+import re
+import language_tool_python
+from symspellpy import SymSpell, Verbosity
+from nltk.tokenize import sent_tokenize
+
+nltk.download('punkt_tab')
+
+# Load a language correction tool
+tool = language_tool_python.LanguageTool('en-US')
+
+# SymSpell setup for OCR error correction
+sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
+sym_spell.load_dictionary("frequency_dictionary_en_82_765.txt", term_index=0, count_index=1)
+
+def clean_text(raw_text):
+    """
+    Cleans and processes OCR text.
+    """
+    # Step 1: Normalize text
+    normalized_text = re.sub(r"[{}«»‘’“”()]", "", raw_text)  # Remove unnecessary characters
+    normalized_text = re.sub(r"\s+", " ", normalized_text).strip()  # Normalize whitespace
+
+    # Step 2: Fix common OCR issues
+    ocr_corrections = {
+        "Wh": "When",
+        "Recti- tude": "Rectitude",
+        "wal": "walk",
+        "rerejens": "verejena",
+        "k-along": "walk along",
+    }
+    for key, value in ocr_corrections.items():
+        normalized_text = normalized_text.replace(key, value)
+
+    # Step 3: Spell correction using SymSpell
+    words = normalized_text.split()
+    corrected_words = []
+    stop_words = {"the", "and", "is", "to", "in", "of", "a", "for"}
+    religion_words = {'Vaishya',
+                      'Brahmin',
+                      'Ahura',
+                      'Mazda',
+                      'Varuna',
+                      'deva',
+                      'Vedhas'}
+    topo_names = {'Bactria',
+                  'Media',
+                  'Persia'}
+    for word in words:
+        if word.lower() not in stop_words|religion_words:
+            suggestions = sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)
+            corrected_words.append(suggestions[0].term if suggestions else word)
+        else:
+            corrected_words.append(word)
+    corrected_text = " ".join(corrected_words)
+
+    # Step 4: Reconstruct sentences
+    sentences = sent_tokenize(corrected_text)
+
+    # Step 5: Grammar and style correction
+    cleaned_sentences = []
+    for sentence in sentences:
+        corrected_sentence = tool.correct(sentence)
+        cleaned_sentences.append(corrected_sentence)
+    cleaned_text = " ".join(cleaned_sentences)
+
+    return cleaned_text
+
+# Example Usage
+ocr_text = """
+All the worlds know Him; and they give to Varuna,
+the name, “Vedhas” (Mazda).
+Wh
+(in India) Vishnu approached Indra, for the
+sake of communion—the greater one assimilated the great
+one—Vedhas (Mazda) won over the Aryans of Trisadha
+( Bactria, Media and Persia ) and led the devotee to Recti-
+tude.
+"""
+
+cleaned_output = clean_text(ocr_text)
+print("Cleaned Text:\n", cleaned_output)
+
+
+
+
+
+
+
+
+
 
 
 
