@@ -479,7 +479,7 @@ ky_txt_limited = ky_txt_spaced[ky_txt_spaced['eng_score'] >= 0.3].reset_index(dr
 
 
 
-ztg_path = "C:/Users/mxjar/Documents/zoro_text_grey_pg2.pdf"
+ztg_path = "C:/Users/mxjar/Documents/zoro_text_grey_pg1_10_flattened.pdf"
 
 # Convert PDF pages to images
 pages = convert_from_path(ztg_path, dpi=300)  # dpi=300 for better quality
@@ -552,6 +552,7 @@ import re
 import language_tool_python
 from symspellpy import SymSpell, Verbosity
 from nltk.tokenize import sent_tokenize
+import nltk
 
 nltk.download('punkt_tab')
 
@@ -568,21 +569,25 @@ def clean_text(raw_text):
     """
     # Step 1: Normalize text
     normalized_text = re.sub(r"[{}«»‘’“”()]", "", raw_text)  # Remove unnecessary characters
+    normalized_text = re.sub(r"—","-",normalized_text)
+    normalized_text = re.sub(r"-[\n]+","",normalized_text)
+    normalized_text = re.sub(r"-"," ",normalized_text)
     normalized_text = re.sub(r"\s+", " ", normalized_text).strip()  # Normalize whitespace
 
     # Step 2: Fix common OCR issues
-    ocr_corrections = {
-        "Wh": "When",
-        "Recti- tude": "Rectitude",
-        "wal": "walk",
-        "rerejens": "verejena",
-        "k-along": "walk along",
-    }
-    for key, value in ocr_corrections.items():
-        normalized_text = normalized_text.replace(key, value)
+    #ocr_corrections = {
+    #    #"Wh": "When",
+    #    "Recti- tude": "Rectitude",
+    #    "wal": "walk",
+    #    "rerejens": "verejena",
+    #    "k-along": "walk along",
+    #}
+    #for key, value in ocr_corrections.items():
+    #    normalized_text = normalized_text.replace(key, value)
 
     # Step 3: Spell correction using SymSpell
-    words = normalized_text.split()
+    words = re.split(' |;|,|\n',normalized_text)
+    words = [i for i in words if i != '']
     corrected_words = []
     stop_words = {"the", "and", "is", "to", "in", "of", "a", "for"}
     religion_words = {'Vaishya',
@@ -591,13 +596,22 @@ def clean_text(raw_text):
                       'Mazda',
                       'Varuna',
                       'deva',
-                      'Vedhas'}
+                      'Vedhas',
+                      'Rudra',
+                      'Vishnu',
+                      'Brahma',
+                      'Yasna',
+                      'Medhas',
+                      'Spetnas',
+                      'Amesha',
+                      'Gathas'}
     topo_names = {'Bactria',
                   'Media',
                   'Persia'}
+    combo_set = stop_words|religion_words|topo_names|eng_words
     for word in words:
-        if word.lower() not in stop_words|religion_words:
-            suggestions = sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)
+        if word.lower() not in combo_set:
+            suggestions = sym_spell.lookup(re.sub(r'[^a-zA-Z]', '', word), Verbosity.CLOSEST, max_edit_distance=2)
             corrected_words.append(suggestions[0].term if suggestions else word)
         else:
             corrected_words.append(word)
@@ -615,6 +629,9 @@ def clean_text(raw_text):
 
     return cleaned_text
 
+ztg_token = sent_tokenize(ztg_text)
+
+
 # Example Usage
 ocr_text = """
 All the worlds know Him; and they give to Varuna,
@@ -629,6 +646,102 @@ tude.
 
 cleaned_output = clean_text(ocr_text)
 print("Cleaned Text:\n", cleaned_output)
+
+
+words = re.split(' |;|,|\n',ocr_text)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import cv2
+import fitz
+import numpy as np
+
+import fitz  # PyMuPDF
+from PIL import Image, ImageEnhance
+import io
+
+def enhance_pdf_contrast(input_pdf, output_pdf, contrast_factor=1.5):
+    # Open the PDF file
+    pdf_document = fitz.open(input_pdf)
+
+    # Loop through each page in the PDF
+    for page_num in range(len(pdf_document)):
+        page = pdf_document[page_num]
+        images = page.get_images(full=True)  # Get all images on the page
+
+        for img_index, img in enumerate(images):
+            xref = img[0]  # Image reference number
+            base_image = pdf_document.extract_image(xref)
+            image_bytes = base_image["image"]  # Extract the image bytes
+            img_ext = base_image["ext"]  # Image file extension (e.g., 'png', 'jpeg')
+
+            # Open the image using PIL
+            pil_image = Image.open(io.BytesIO(image_bytes))
+
+            # Enhance contrast using PIL's ImageEnhance
+            enhancer = ImageEnhance.Contrast(pil_image)
+            enhanced_image = enhancer.enhance(contrast_factor)
+
+            # Save the enhanced image back into memory
+            img_buffer = io.BytesIO()
+            enhanced_image.save(img_buffer, format=img_ext.upper())
+
+            # Replace the original image in the PDF with the enhanced one
+            rects = page.get_image_rects(xref)  # Get the positions of the image(s)
+            for rect in rects:  # In case the same image is used multiple times
+                page.insert_image(rect, stream=img_buffer.getvalue(), keep_proportion=True)
+
+    # Save the updated PDF without removing redactions
+    pdf_document.save(output_pdf)
+
+
+def check_pdf_encryption(file_path):
+    try:
+        pdf = fitz.open(file_path)
+        if pdf.is_encrypted:
+            print(f"The PDF '{file_path}' is encrypted.")
+            if pdf.permissions & fitz.PDF_PERM_MODIFY:
+                print("The PDF allows modifications.")
+            else:
+                print("The PDF does NOT allow modifications.")
+        else:
+            print(f"The PDF '{file_path}' is not encrypted.")
+    except Exception as e:
+        print(f"Error opening PDF: {e}")
+
+# Example Usage
+enhance_pdf_contrast("C:/Users/mxjar/Documents/zoro_text_edited_grey.pdf", "C:/Users/mxjar/Documents/zoro_text_edited_hc.pdf", contrast_factor=2.0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
