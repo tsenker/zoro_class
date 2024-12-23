@@ -18,7 +18,7 @@ from PyPDF2 import PdfReader
 reader = PdfReader('C:/Users/mxjar/Documents/zoro_text.pdf')
 page = reader.pages[100]
 extracted_text = page.extract_text()
-
+poppler_path = "/usr/local/bin" 
 
 import pytesseract
 from pdf2image import convert_from_path
@@ -28,7 +28,7 @@ from PIL import ImageOps
 
 # Ensure Tesseract is installed and set up
 # Replace with your tesseract installation path if needed (for Windows)
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\mxjar\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = r'/usr/local/bin/tesseract'
 # pytesseract.pytesseract.tesseract_cmd = r'path_to_tesseract'
 
 # Path to the PDF
@@ -80,6 +80,9 @@ import pandas as pd
 import numpy as np
 import re
 import nltk
+
+nltk.download('words')
+
 from nltk.corpus import words
 eng_words = {i for i in set(words.words()) if len(i)>1}
 eng_words = set(['a'])|eng_words
@@ -109,7 +112,6 @@ def split_concatenated_words(text):
     # If no valid split was found, try to identify the proper noun
     if dp[-1] is None:
         return handle_proper_noun_case(text, dp)
-    
     return ' '.join(dp[-1])
 
 def proper_noun_heuristic(word):
@@ -479,10 +481,10 @@ ky_txt_limited = ky_txt_spaced[ky_txt_spaced['eng_score'] >= 0.3].reset_index(dr
 
 
 
-ztg_path = "C:/Users/mxjar/Documents/zoro_text_grey_pg1_10_flattened.pdf"
+ztg_path = "/Users/mattjarvis/Downloads/zoro_text_edited_hc.pdf"
 
 # Convert PDF pages to images
-pages = convert_from_path(ztg_path, dpi=300)  # dpi=300 for better quality
+pages = convert_from_path(ztg_path, dpi=300, poppler_path=poppler_path)  # dpi=300 for better quality
 
 # Directory to save images (optional)
 image_dir = "pdf_images"
@@ -505,6 +507,35 @@ for page_num, page in enumerate(pages):
 
     # Append extracted text from this page to the complete PDF text
     ztg_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+    
+    
+    
+zg2_2_path = "/Users/mattjarvis/Downloads/zoro_gathas_edited_p1_10.pdf"
+
+# Convert PDF pages to images
+pages = convert_from_path(zg2_2_path, dpi=300, poppler_path=poppler_path)  # dpi=300 for better quality
+
+# Directory to save images (optional)
+image_dir = "pdf_images"
+#if not os.path.exists(image_dir):
+#    os.makedirs(image_dir)
+
+# Initialize an empty string to store the extracted text
+zg2_2_text = ""
+
+# Iterate through all the pages and extract text
+for page_num, page in enumerate(pages):
+    # Save the page as an image file (optional)
+    #image_path = f"{image_dir}/page_{page_num + 1}.png"
+    #page.save(image_path, 'PNG')
+    
+    page = ImageOps.expand(page, border=500, fill="white")
+    # Use PyTesseract to perform OCR on the image
+    custom_config = r'-l eng --psm 3'
+    text = pytesseract.image_to_string(page.rotate(270), config=custom_config)
+
+    # Append extracted text from this page to the complete PDF text
+    zg2_2_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
 
 
 import cv2
@@ -523,23 +554,12 @@ cv2.imwrite("C:/Users/mxjar/Documents/boxes_scan.jpg", image)
 
 
 # Define the predefined path to save the file
-file_path = r'C:/Users/mxjar/Documents/zoro_text_edited2.txt'  # For Windows
+file_path = r'/Users/mattjarvis/Documents/ztg_text_full_hc.txt'  # For Windows
 # file_path = '/path/to/directory/myfile.txt'  # For Linux/macOS
 
 # Open the file in write mode and save the content
 with open(file_path, 'w', encoding='utf-8') as file:
-    file.write(z_t1_text)
-
-# Output the extracted text
-print(z_t1_text)
-
-with open(file_path, 'r') as file:
-    z_t1_text = file.read()
-
-
-
-
-
+    file.write(ztg_text)
 
 
 
@@ -587,30 +607,34 @@ def clean_text(raw_text):
 
     # Step 3: Spell correction using SymSpell
     words = re.split(' |;|,|\n',normalized_text)
-    words = [i for i in words if i != '']
+    words = [split_concatenated_words(i) for i in words if i != '']
     corrected_words = []
     stop_words = {"the", "and", "is", "to", "in", "of", "a", "for"}
-    religion_words = {'Vaishya',
-                      'Brahmin',
-                      'Ahura',
-                      'Mazda',
-                      'Varuna',
+    religion_words = {'vaishya',
+                      'brahmin',
+                      'ahura',
+                      'mazda',
+                      'varuna',
                       'deva',
-                      'Vedhas',
-                      'Rudra',
-                      'Vishnu',
-                      'Brahma',
-                      'Yasna',
-                      'Medhas',
-                      'Spetnas',
-                      'Amesha',
-                      'Gathas'}
-    topo_names = {'Bactria',
-                  'Media',
-                  'Persia'}
+                      'vedhas',
+                      'rudra',
+                      'vishnu',
+                      'brahma',
+                      'yasna',
+                      'medhas',
+                      'spentas',
+                      'spenta',
+                      'amesha',
+                      'gathas',
+                      'gatha',
+                      'hormazd'}
+    topo_names = {'bactria',
+                  'media',
+                  'persia'}
     combo_set = stop_words|religion_words|topo_names|eng_words
     for word in words:
-        if word.lower() not in combo_set:
+        if re.sub(r'[^a-zA-Z]', '', word).lower() not in combo_set and proper_noun_heuristic(word)==False:
+            
             suggestions = sym_spell.lookup(re.sub(r'[^a-zA-Z]', '', word), Verbosity.CLOSEST, max_edit_distance=2)
             corrected_words.append(suggestions[0].term if suggestions else word)
         else:
@@ -621,11 +645,11 @@ def clean_text(raw_text):
     sentences = sent_tokenize(corrected_text)
 
     # Step 5: Grammar and style correction
-    cleaned_sentences = []
-    for sentence in sentences:
-        corrected_sentence = tool.correct(sentence)
-        cleaned_sentences.append(corrected_sentence)
-    cleaned_text = " ".join(cleaned_sentences)
+    #cleaned_sentences = []
+    #for sentence in sentences:
+    #    corrected_sentence = tool.correct(sentence)
+   #     cleaned_sentences.append(corrected_sentence)
+    cleaned_text = " ".join(sentences)
 
     return cleaned_text
 
@@ -722,18 +746,14 @@ def check_pdf_encryption(file_path):
         print(f"Error opening PDF: {e}")
 
 # Example Usage
-enhance_pdf_contrast("C:/Users/mxjar/Documents/zoro_text_edited_grey.pdf", "C:/Users/mxjar/Documents/zoro_text_edited_hc.pdf", contrast_factor=2.0)
+enhance_pdf_contrast("/Users/mattjarvis/Downloads/zte_pg1.pdf", "/Users/mattjarvis/Documents/zte_pg1_1.pdf", contrast_factor=2.0)
 
 
 
-
-
-print("hello world")
-
-
-
-
-
+enhance_pdf_contrast("/Users/mattjarvis/Downloads/selected_yasna_edited.pdf", "/Users/mattjarvis/Documents/selected_yasna_edited_hc.pdf", contrast_factor=2.0)
+enhance_pdf_contrast("/Users/mattjarvis/Downloads/kanga_yashts_edited.pdf", "/Users/mattjarvis/Documents/kanga_yashts_edited_hc.pdf", contrast_factor=2.0)
+enhance_pdf_contrast("/Users/mattjarvis/Downloads/khordeh_avesta_edited.pdf", "/Users/mattjarvis/Documents/khordeh_avesta_edited_hc.pdf", contrast_factor=2.0)
+enhance_pdf_contrast("/Users/mattjarvis/Downloads/zoro_gathas_edited.pdf", "/Users/mattjarvis/Documents/zoro_gathas_edited_hc.pdf", contrast_factor=2.0)
 
 
 
@@ -747,6 +767,20 @@ print("hello world")
 
 
 
+
+from pdf2image import convert_from_path
+
+# Path to your PDF
+pdf_path = "/Users/mattjarvis/Downloads/zte_pg1.pdf"
+
+# Manually specify the path to Poppler utilities
+poppler_path = "/usr/local/bin"  # Adjust to your actual Poppler path
+
+# Convert PDF to images
+pages = convert_from_path(pdf_path, dpi=300, poppler_path=poppler_path)
+
+# Print the number of pages extracted
+print(f"Number of pages: {len(pages)}")
 
 
 
