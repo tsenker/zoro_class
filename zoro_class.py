@@ -6,10 +6,15 @@ Created on Mon Oct  7 18:27:24 2024
 """
 
 ### SOURCES
-# Kanga gathas
+# khordeh avesta -- DONE
+# zoro gathas -- DONE
+# Kanga gathas - DONE
+# vedic gathas - DONE
 # Yasna
 # Zoro-hymns (hymns of athuravan zarathustra)
 
+# you got a lot of your material for the bible from the university of michigan and 
+# https://www.stjohnsarlingtonva.org/Customer-Content/saintjohnsarlington/CMS/files/EFM/Didache_-_Complete_Text.pdf for the didache
 
 
 
@@ -96,7 +101,27 @@ texts = pd.DataFrame({'text':[],'source':[],'rel':[]})
 
 def split_concatenated_words(text):
     """Split concatenated English words with a possible non-English proper noun."""
+    religion_words = {'vaishya',
+                      'brahmin',
+                      'ahura',
+                      'mazda',
+                      'varuna',
+                      'deva',
+                      'vedhas',
+                      'rudra',
+                      'vishnu',
+                      'brahma',
+                      'yasna',
+                      'medhas',
+                      'spentas',
+                      'spenta',
+                      'amesha',
+                      'gathas',
+                      'gatha',
+                      'hormazd'}
     
+    if text in religion_words:
+        return text
     # Initialize the dynamic programming table
     dp = [None] * (len(text) + 1)
     dp[0] = []  # Base case: an empty string is considered a valid split
@@ -510,10 +535,10 @@ for page_num, page in enumerate(pages):
     
     
     
-zg2_2_path = "/Users/mattjarvis/Downloads/zoro_gathas_edited_p1_10.pdf"
+zg2_path = "/Users/mattjarvis/Downloads/zoro_gathas_edited.pdf"
 
 # Convert PDF pages to images
-pages = convert_from_path(zg2_2_path, dpi=300, poppler_path=poppler_path)  # dpi=300 for better quality
+pages = convert_from_path(zg2_path, dpi=300, poppler_path=poppler_path)  # dpi=300 for better quality
 
 # Directory to save images (optional)
 image_dir = "pdf_images"
@@ -521,7 +546,7 @@ image_dir = "pdf_images"
 #    os.makedirs(image_dir)
 
 # Initialize an empty string to store the extracted text
-zg2_2_text = ""
+zg2_text = ""
 
 # Iterate through all the pages and extract text
 for page_num, page in enumerate(pages):
@@ -535,8 +560,131 @@ for page_num, page in enumerate(pages):
     text = pytesseract.image_to_string(page.rotate(270), config=custom_config)
 
     # Append extracted text from this page to the complete PDF text
-    zg2_2_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+    zg2_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
 
+
+# Convert PDF pages to images
+pages = convert_from_path(zg2_path, dpi=300, poppler_path=poppler_path)  # dpi=300 for better quality
+
+# Directory to save images (optional)
+image_dir = "pdf_images"
+#if not os.path.exists(image_dir):
+#    os.makedirs(image_dir)
+
+
+
+ka_path = "/Users/mattjarvis/Downloads/khordeh_avesta_edited.pdf"
+
+# Convert PDF pages to images
+pages = convert_from_path(ka_path, dpi=300, poppler_path=poppler_path)  # dpi=300 for better quality
+
+
+# Initialize an empty string to store the extracted text
+ka_text = ""
+
+# Iterate through all the pages and extract text
+for page_num, page in enumerate(pages):
+    # Save the page as an image file (optional)
+    #image_path = f"{image_dir}/page_{page_num + 1}.png"
+    #page.save(image_path, 'PNG')
+    
+    page = ImageOps.expand(page, border=500, fill="white")
+    # Use PyTesseract to perform OCR on the image
+    custom_config = r'-l eng --psm 3'
+    text = pytesseract.image_to_string(page.rotate(270), config=custom_config)
+
+    # Append extracted text from this page to the complete PDF text
+    ka_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+
+
+# Open the file in write mode and save the content
+with open(file_path, 'w', encoding='utf-8') as file:
+    file.write(ka_text)
+
+ka_text_clean = clean_text(ka_text)
+ka_c_list = sent_tokenize(ka_text_clean)
+
+ka_df = pd.DataFrame({'text':ka_c_list,'type':['khordeh_avesta']*len(ka_c_list)})
+
+ka_df.to_csv('/Users/mattjarvis/Documents/ka_df.csv')
+
+
+
+
+ky_path = "/Users/mattjarvis/Downloads/khordeh_avesta_edited.pdf"
+
+# Convert PDF pages to images
+pages = convert_from_path(ky_path, dpi=300, poppler_path=poppler_path)  # dpi=300 for better quality
+
+
+# Initialize an empty string to store the extracted text
+ky_text = ""
+
+# Iterate through all the pages and extract text
+for page_num, page in enumerate(pages):
+    # Save the page as an image file (optional)
+    #image_path = f"{image_dir}/page_{page_num + 1}.png"
+    #page.save(image_path, 'PNG')
+    
+    page = ImageOps.expand(page, border=500, fill="white")
+    # Use PyTesseract to perform OCR on the image
+    custom_config = r'-l eng --psm 3'
+    text = pytesseract.image_to_string(page.rotate(270), config=custom_config)
+
+    # Append extracted text from this page to the complete PDF text
+    ky_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+
+
+# Open the file in write mode and save the content
+with open(file_path, 'w', encoding='utf-8') as file:
+    file.write(ky_text)
+
+ky_text_cleaned = clean_text(ky_text)
+ky_c_list = sent_tokenize(ky_text_cleaned)
+
+ky_df = pd.DataFrame({'text':ky_c_list,'type':['kanga_yashts']*len(ky_c_list)})
+
+ky_df.to_csv('/Users/mattjarvis/Documents/ky_df.csv')
+
+
+sy_path = "/Users/mattjarvis/Downloads/selected_yasna_edited.pdf"
+
+# Convert PDF pages to images
+pages = convert_from_path(sy_path, dpi=300, poppler_path=poppler_path)  # dpi=300 for better quality
+
+
+# Initialize an empty string to store the extracted text
+sy_text = ""
+
+# Iterate through all the pages and extract text
+for page_num, page in enumerate(pages):
+    # Save the page as an image file (optional)
+    #image_path = f"{image_dir}/page_{page_num + 1}.png"
+    #page.save(image_path, 'PNG')
+    
+    page = ImageOps.expand(page, border=500, fill="white")
+    # Use PyTesseract to perform OCR on the image
+    custom_config = r'-l eng --psm 3'
+    text = pytesseract.image_to_string(page.rotate(270), config=custom_config)
+
+    # Append extracted text from this page to the complete PDF text
+    sy_text += f"\n\n--- Page {page_num + 1} ---\n\n{text}"
+
+
+# Open the file in write mode and save the content
+with open(file_path, 'w', encoding='utf-8') as file:
+    file.write(sy_text)
+
+
+
+sy_text_cleaned = re.sub(r"\n"," ",sy_text)
+sy_text_cleaned = re.sub(r"--- Page [0-9]+ ---","",sy_text_cleaned)
+sy_text_cleaned  = re.sub(r"\s+", " ", sy_text_cleaned).strip()
+sy_text_cleaned = re.split(r'[A-Z]{4,}.*?[1-9]{2}\.[0-9]+',sy_text_cleaned)
+
+sy_df = pd.DataFrame({'text':sy_text_cleaned,'type':['selected_yasna']*len(sy_text_cleaned)})
+
+sy_df.to_csv('/Users/mattjarvis/Documents/sy_df.csv')
 
 import cv2
 import numpy as np
@@ -588,7 +736,11 @@ def clean_text(raw_text):
     Cleans and processes OCR text.
     """
     # Step 1: Normalize text
-    normalized_text = re.sub(r"[{}«»‘’“”()]", "", raw_text)  # Remove unnecessary characters
+    normalized_text = re.sub(r"\(i+\)","",raw_text)
+    normalized_text = re.sub(r"[{}«»‘’“”()*™®°'>=_%¥\ufeff]", "", normalized_text)
+    normalized_text = re.sub(r"[\'+ | \'+]", " ", normalized_text)# Remove unnecessary characters
+    normalized_text = re.sub(r"[\"+ | \"+]", " ", normalized_text)# Remove unnecessary characters
+    normalized_text = re.sub(r"--- Page [0-9]+ ---","",normalized_text)
     normalized_text = re.sub(r"—","-",normalized_text)
     normalized_text = re.sub(r"-[\n]+","",normalized_text)
     normalized_text = re.sub(r"-"," ",normalized_text)
@@ -606,8 +758,7 @@ def clean_text(raw_text):
     #    normalized_text = normalized_text.replace(key, value)
 
     # Step 3: Spell correction using SymSpell
-    words = re.split(' |;|,|\n',normalized_text)
-    words = [split_concatenated_words(i) for i in words if i != '']
+    
     corrected_words = []
     stop_words = {"the", "and", "is", "to", "in", "of", "a", "for"}
     religion_words = {'vaishya',
@@ -632,6 +783,10 @@ def clean_text(raw_text):
                   'media',
                   'persia'}
     combo_set = stop_words|religion_words|topo_names|eng_words
+    
+    words = re.split(' |;|,|\n',normalized_text.lower())
+    words = [split_concatenated_words(i) for i in words if i != '']
+    
     for word in words:
         if re.sub(r'[^a-zA-Z]', '', word).lower() not in combo_set and proper_noun_heuristic(word)==False:
             
@@ -645,10 +800,10 @@ def clean_text(raw_text):
     sentences = sent_tokenize(corrected_text)
 
     # Step 5: Grammar and style correction
-    #cleaned_sentences = []
-    #for sentence in sentences:
-    #    corrected_sentence = tool.correct(sentence)
-   #     cleaned_sentences.append(corrected_sentence)
+    cleaned_sentences = []
+    for sentence in sentences:
+        corrected_sentence = tool.correct(sentence)
+        cleaned_sentences.append(corrected_sentence)
     cleaned_text = " ".join(sentences)
 
     return cleaned_text
@@ -785,8 +940,10 @@ print(f"Number of pages: {len(pages)}")
 
 
 
-
-
+zoro_texts = pd.concat([ka_df,ky_df,ztg_df,zg2_df,sy_df],axis = 0)
+zoro_texts.to_csv('/Users/mattjarvis/Documents/combined_zoro_texts.csv')
+zoro_texts['len'] = zoro_texts['text'].str.len()
+legit_zt = zoro_texts[zoro_texts['text'].str.len()>30].reset_index(drop = True)
 
 
 
