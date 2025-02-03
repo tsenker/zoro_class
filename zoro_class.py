@@ -946,6 +946,139 @@ zoro_texts['len'] = zoro_texts['text'].str.len()
 legit_zt = zoro_texts[zoro_texts['text'].str.len()>30].reset_index(drop = True)
 
 
+####### Now let's do our Christian texts
+
+import pandas as pd
+import numpy as np
+
+bs = pd.read_csv('/Users/mattjarvis/Documents/bible_selected.rtf')
+
+
+import pandas as pd
+from striprtf.striprtf import rtf_to_text
+import re
+
+def extract_sentences_from_rtf(file_path):
+  """
+  Extracts sentences from an RTF file, 
+  where each sentence is assumed to start with a number in brackets or parentheses followed by a colon.
+
+  Args:
+    file_path: Path to the RTF file.
+
+  Returns:
+    A list of extracted sentences.
+  """
+  with open(file_path, 'r', encoding='utf-8') as file:
+    rtf_text = file.read()
+
+  # Convert RTF to plain text
+  plain_text = rtf_to_text(rtf_text)
+
+  # Extract sentences using regular expression
+  sentences = re.findall(r"\[?\d+\]?\s*\((.*?)\)", plain_text, flags=re.DOTALL) 
+  return sentences
+
+bs = extract_sentences_from_rtf('/Users/mattjarvis/Documents/revelation.rtf')
+
+
+
+def read_rtf_as_string(file_path):
+    """
+    Reads an RTF file and returns its content as a string.
+
+    Args:
+        file_path: Path to the RTF file.
+
+    Returns:
+        A string containing the plain text extracted from the RTF file, 
+        or an empty string if the file cannot be read.
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8-sig') as file:
+            rtf_text = file.read()
+    except UnicodeDecodeError:
+        try:
+            with open(file_path, 'r', encoding='latin-1') as file:
+                rtf_text = file.read()
+        except UnicodeDecodeError:
+            print(f"Error: Unable to decode file {file_path}. Please check file encoding.")
+            return "" 
+
+    return rtf_to_text(rtf_text)
+
+
+bs = read_rtf_as_string('/Users/mattjarvis/Documents/bible_selected.rtf')
+bs_df = pd.DataFrame({'text':re.split(r'(\(\d+\))', bs)})
+
+bs_df = bs_df[bs_df['text'].str.contains(r'[0-9]+')==False].reset_index(drop=True)
+bs_df['text']  = bs_df['text'].str.replace('\n',' ')
+bs_df['type'] = 'selected_bible_verses'
+
+rev = read_rtf_as_string('/Users/mattjarvis/Documents/revelation.rtf')
+
+rev_df = pd.DataFrame({'text':re.findall("[\[\(][0-9]*[\]\)].*?(?=\n)",rev)})
+rev_df['text'] = rev_df['text'].apply(lambda x: re.sub("[\[\(][0-9]*[\]\)]","",x)).str.strip()
+rev_df = rev_df[rev_df['text'].str.len() > 0].reset_index(drop=True)
+rev_df['type'] = 'revelation'
+
+lev = read_rtf_as_string('/Users/mattjarvis/Documents/leviticus.rtf')
+lev_df = pd.DataFrame({'text':re.findall("[\[\(][0-9]*[\]\)].*?(?=\n)",lev)})
+lev_df['text'] = lev_df['text'].apply(lambda x: re.sub("[\[\(][0-9]*[\]\)]","",x)).str.strip()
+lev_df = lev_df[lev_df['text'].str.len() > 0].reset_index(drop=True)
+lev_df['type'] = 'leviticus'
+
+
+lev = read_rtf_as_string('/Users/mattjarvis/Documents/leviticus.rtf')
+lev_df = pd.DataFrame({'text':re.findall("[\[\(][0-9]*[\]\)].*?(?=\n)",lev)})
+lev_df['text'] = lev_df['text'].apply(lambda x: re.sub("[\[\(][0-9]*[\]\)]","",x)).str.strip()
+lev_df = lev_df[lev_df['text'].str.len() > 0].reset_index(drop=True)
+lev_df['type'] = 'leviticus'
+
+acts = read_rtf_as_string('/Users/mattjarvis/Documents/acts.rtf')
+acts_df = pd.DataFrame({'text':re.findall("[\[\(][0-9]*[\]\)].*?(?=\n)",acts)})
+acts_df['text'] = acts_df['text'].apply(lambda x: re.sub("[\[\(][0-9]*[\]\)]","",x)).str.strip()
+acts_df = acts_df[acts_df['text'].str.len() > 0].reset_index(drop=True)
+acts_df['type'] = 'acts'
+
+one_corinthians = read_rtf_as_string('/Users/mattjarvis/Documents/1_corinthians.rtf')
+one_corinthians_df = pd.DataFrame({'text':re.findall("[\[\(][0-9]*[\]\)].*?(?=\n)",one_corinthians)})
+one_corinthians_df['text'] = one_corinthians_df['text'].apply(lambda x: re.sub("[\[\(][0-9]*[\]\)]","",x)).str.strip()
+one_corinthians_df = one_corinthians_df[one_corinthians_df['text'].str.len() > 0].reset_index(drop=True)
+one_corinthians_df['type'] = '1_corinthians'
+
+romans = read_rtf_as_string('/Users/mattjarvis/Documents/romans.rtf')
+romans_sentences = re.split(r"\\n[0-9]+", repr(romans))
+romans_df = pd.DataFrame({'text':romans_sentences})
+romans_df['text'] = romans_df['text'].apply(lambda x: re.sub(r'\\n|\\xa0|[*a-z]\(\"https:.*?\)', '', repr(x)).strip())
+romans_df['text'] = romans_df['text'].apply(lambda x: re.sub(r'\\', ' ', repr(x)).strip("\""))
+romans_df['text'] = romans_df['text'].apply(lambda x: x.strip("'"))
+romans_df['text'] = romans_df['text'].apply(lambda x: x.strip())
+romans_df['type'] = 'romans'
+
+galatians = read_rtf_as_string('/Users/mattjarvis/Documents/galatians.rtf')
+galatians_sentences = re.split(r"\\n[0-9]+", repr(galatians))
+galatians_df = pd.DataFrame({'text':galatians_sentences})
+galatians_df['text'] = galatians_df['text'].apply(lambda x: re.sub(r'\\n|\\xa0|[*a-z]\(\"https:.*?\)', '', repr(x)).strip())
+galatians_df['text'] = galatians_df['text'].apply(lambda x: re.sub(r'\\', ' ', repr(x)).strip("\""))
+galatians_df['text'] = galatians_df['text'].apply(lambda x: x.strip("'"))
+galatians_df['text'] = galatians_df['text'].apply(lambda x: x.strip())
+galatians_df['text'] = galatians_df['text'].apply(lambda x: re.sub(r'\s+', ' ', x))
+galatians_df['type'] = 'galatians'
+
+didache = read_rtf_as_string('/Users/mattjarvis/Documents/didache.rtf')
+didache_sentences = re.split(r"\\n[0-9]+:[0-9]+", repr(didache))
+didache_df = pd.DataFrame({'text':didache_sentences})
+didache_df['text'] = didache_df['text'].apply(lambda x: re.sub(r'\\n|\\xa0|[*a-z]\(\"https:.*?\)', '', repr(x)).strip())
+didache_df['text'] = didache_df['text'].apply(lambda x: re.sub(r'\\', ' ', repr(x)).strip("\""))
+didache_df['text'] = didache_df['text'].apply(lambda x: x.strip("'"))
+didache_df['text'] = didache_df['text'].apply(lambda x: x.strip())
+didache_df['type'] = 'didache'
+didache_df['text'] = didache_df['text'].apply(lambda x: re.sub(r'\\', ' ', repr(x)).strip("\""))
+didache_df['text'] = didache_df['text'].apply(lambda x: re.sub('on      \'t','on\'t',x))
+didache_df['text'] = didache_df['text'].apply(lambda x: x.strip("'")).apply(lambda x: x.strip()).apply(lambda x: x.strip('"')).apply(lambda x: x.strip()).apply(lambda x: x.strip("'"))
+didache_df['text'] = didache_df['text'].apply(lambda x: re.sub(r'\s+\'s', '\'s', x).strip())
+
 
 
 
