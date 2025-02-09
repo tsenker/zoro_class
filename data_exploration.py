@@ -141,10 +141,6 @@ vt_pca = pca_init.fit_transform(vt_scaled)
 #vt_pca2 = PCA(n_components = 5).fit(vt.T)
 
 
-
-
-
-
 cumulative_variance = np.cumsum(vt_pca_fit.explained_variance_ratio_)
 
 # Plot cumulative explained variance
@@ -158,7 +154,55 @@ plt.show()
 
 
 
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import  train_test_split
+from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 
+vt_pca_df = pd.DataFrame(vt_pca)
+
+x_test, x_train, y_test, y_train = train_test_split(vt_pca_df,y,test_size= 0.7)
+
+model_log = LogisticRegression()
+model_log.fit(x_train, y_train)
+log_predict = pd.DataFrame({'predictions':model_log.predict(x_test)})
+log_predict.index = x_test.index
+
+accuracy = accuracy_score(y_test, log_predict)
+precision, recall, f1, support = precision_recall_fscore_support(y_test, log_predict, average=None)
+
+print('Accuracy is '+str(accuracy))
+print('Precision is '+str(precision))
+print('Recall is '+str(recall))
+print('F1 is '+str(f1))
+print('Support is '+str(support))
+
+examination_df = pd.DataFrame({'text':texts[texts.index.isin(set(x_test.index))==True]['text'],'rel':texts[texts.index.isin(set(x_test.index))==True]['rel'],'log_reg_pred_rel':log_predict['predictions']})
+
+
+
+def find_matching_rows(df1, df2):
+  """
+  Finds the indices of rows in df1 that are also present in df2.
+
+  Args:
+    df1: The first DataFrame.
+    df2: The second DataFrame.
+
+  Returns:
+    A list of indices of the matching rows in df1.
+  """
+
+  # Convert DataFrames to NumPy arrays
+  arr1 = df1.values
+  arr2 = df2.values
+
+  # Find matching row indices
+  matching_indices = []
+  for i, row in enumerate(arr1):
+    if any(np.array_equal(row, arr2_row) for arr2_row in arr2):
+      matching_indices.append(i)
+
+  return matching_indices
 
 
 
