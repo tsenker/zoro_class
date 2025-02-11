@@ -134,7 +134,7 @@ vt_scaled = scaler.fit_transform(vectorized_text)
 
 from sklearn.decomposition import PCA
 
-pca_init = PCA(n_components= 120)
+pca_init = PCA(n_components= 50)
 #vt_pca = pca_init.fit(vt.T)
 vt_pca_fit = pca_init.fit(vt_scaled)
 vt_pca = pca_init.fit_transform(vt_scaled)
@@ -157,6 +157,7 @@ plt.show()
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import  train_test_split
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
+from sklearn.metrics.pairwise import cosine_similarity
 
 vt_pca_df = pd.DataFrame(vt_pca)
 
