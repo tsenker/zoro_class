@@ -165,7 +165,10 @@ x_test, x_train, y_test, y_train = train_test_split(vt_pca_df,y,test_size= 0.7)
 
 model_log = LogisticRegression()
 model_log.fit(x_train, y_train)
-log_predict = pd.DataFrame({'predictions':model_log.predict(x_test)})
+
+y_prob = model_log.predict_proba(x_test)
+
+log_predict = pd.DataFrame({'predictions':model_log.predict(x_test),'chrs_prob':y_prob[:,0],'zoro_prob':y_prob[:,1]})
 log_predict.index = x_test.index
 
 accuracy = accuracy_score(y_test, log_predict)
@@ -177,9 +180,10 @@ print('Recall is '+str(recall))
 print('F1 is '+str(f1))
 print('Support is '+str(support))
 
-examination_df = pd.DataFrame({'text':texts[texts.index.isin(set(x_test.index))==True]['text'],'rel':texts[texts.index.isin(set(x_test.index))==True]['rel'],'log_reg_pred_rel':log_predict['predictions']})
+examination_df = pd.DataFrame({'text':texts[texts.index.isin(set(x_test.index))==True]['text'],
+                               'rel':texts[texts.index.isin(set(x_test.index))==True]['rel']})
 
-
+examination_df = examination_df.merge(log_predict, left_index = True, right_index=True)
 
 def find_matching_rows(df1, df2):
   """
