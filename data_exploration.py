@@ -166,9 +166,9 @@ x_test, x_train, y_test, y_train = train_test_split(vt_pca_df,y,test_size= 0.7)
 model_log = LogisticRegression()
 model_log.fit(x_train, y_train)
 
-y_prob = model_log.predict_proba(x_test)
+y_prob_log = model_log.predict_proba(x_test)
 
-log_predict = pd.DataFrame({'predictions':model_log.predict(x_test),'chrs_prob':y_prob[:,0],'zoro_prob':y_prob[:,1]})
+log_predict = pd.DataFrame({'predictions':model_log.predict(x_test),'chrs_prob':y_prob_log[:,0],'zoro_prob':y_prob_log[:,1]})
 log_predict.index = x_test.index
 
 accuracy_log = accuracy_score(y_test, log_predict['predictions'])
@@ -180,22 +180,30 @@ print('Recall is '+str(recall_log))
 print('F1 is '+str(f1_log))
 print('Support is '+str(support_log))
 
-examination_df = pd.DataFrame({'text':texts[texts.index.isin(set(x_test.index))==True]['text'],
+log_examination_df = pd.DataFrame({'text':texts[texts.index.isin(set(x_test.index))==True]['text'],
                                'rel':texts[texts.index.isin(set(x_test.index))==True]['rel']})
 
-examination_df = examination_df.merge(log_predict, left_index = True, right_index=True)
+log_examination_df = log_examination_df.merge(log_predict, left_index = True, right_index=True)
 
 
 plt.figure(figsize=(8, 6))
-plt.hist(examination_df['zoro_prob'])
+plt.hist(log_examination_df['zoro_prob'])
 plt.xlabel('Zoroastrian Likelihood')
 plt.ylabel('Number of instances')
 plt.title('Explained Variance by Different Principal Components')
 plt.grid()
 plt.show()
 
+
+vt_pca_df['rel'] = texts['rel']
+vt_pca_df['rel_bin'] = np.where(vt_pca_df['rel'] == 'chrs',1,0)
+
+colors = ['red', 'blue']
+group_colors = [colors[g] for g in vt_pca_df['rel_bin']]
+
+
 plt.figure(figsize=(8, 6))
-plt.scatter(vt_pca_df.iloc[:,0],vt_pca_df.iloc[:,1])
+plt.scatter(vt_pca_df.iloc[:,0],vt_pca_df.iloc[:,1], c=group_colors)
 plt.xlabel('PCA Component 1')
 plt.ylabel('PCA Component 2')
 plt.title('Zoroastrian Christian text comparison: most prominent PCA components visualized')
@@ -205,11 +213,57 @@ plt.show()
 
 
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import MinMaxScaler
 
+mm_scaler = MinMaxScaler()
+x_train_mm_scaled = mm_scaler.fit_transform(x_train)
+x_test_mm_scaled = mm_scaler.fit_transform(x_test)
 
+model_nb = MultinomialNB()
+model_nb.fit(x_train_mm_scaled, y_train)
 
+y_prob_nb = model_nb.predict_proba(x_test_mm_scaled)
+
+nb_predict = pd.DataFrame({'predictions':model_nb.predict(x_test),'chrs_prob':y_prob_nb[:,0],'zoro_prob':y_prob_nb[:,1]})
+nb_predict.index = x_test.index
+
+accuracy_nb = accuracy_score(y_test, nb_predict['predictions'])
+precision_nb, recall_nb, f1_nb, support_nb = precision_recall_fscore_support(y_test, nb_predict['predictions'], average=None)
+
+print('Accuracy is '+str(accuracy_nb))
+print('Precision is '+str(precision_nb))
+print('Recall is '+str(recall_nb))
+print('F1 is '+str(f1_nb))
+print('Support is '+str(support_nb))
+
+nb_examination_df = pd.DataFrame({'text':texts[texts.index.isin(set(x_test.index))==True]['text'],
+                               'rel':texts[texts.index.isin(set(x_test.index))==True]['rel']})
+
+nb_examination_df = nb_examination_df.merge(nb_predict, left_index = True, right_index=True)
+
+from sklearn.svm import SVC
+
+model_svm = SVC(probability = True)
+model_svm.fit(x_train, y_train)
+
+y_prob_svm = model_svm.predict_proba(x_test)
+
+svm_predict = pd.DataFrame({'predictions':model_svm.predict(x_test),'chrs_prob':y_prob_svm[:,0],'zoro_prob':y_prob_svm[:,1]})
+svm_predict.index = x_test.index
+
+accuracy_svm = accuracy_score(y_test, svm_predict['predictions'])
+precision_svm, recall_svm, f1_svm, support_svm = precision_recall_fscore_support(y_test, svm_predict['predictions'], average=None)
+
+print('Accuracy is '+str(accuracy_svm))
+print('Precision is '+str(precision_svm))
+print('Recall is '+str(recall_svm))
+print('F1 is '+str(f1_svm))
+print('Support is '+str(support_svm))
+
+examination_df_svm = pd.DataFrame({'text':texts[texts.index.isin(set(x_test.index))==True]['text'],
+                               'rel':texts[texts.index.isin(set(x_test.index))==True]['rel']})
+
+examination_df_svm = examination_df_svm.merge(svm_predict, left_index = True, right_index=True)
 
 
 
