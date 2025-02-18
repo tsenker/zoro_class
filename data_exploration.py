@@ -171,43 +171,57 @@ y_prob = model_log.predict_proba(x_test)
 log_predict = pd.DataFrame({'predictions':model_log.predict(x_test),'chrs_prob':y_prob[:,0],'zoro_prob':y_prob[:,1]})
 log_predict.index = x_test.index
 
-accuracy = accuracy_score(y_test, log_predict)
-precision, recall, f1, support = precision_recall_fscore_support(y_test, log_predict, average=None)
+accuracy_log = accuracy_score(y_test, log_predict['predictions'])
+precision_log, recall_log, f1_log, support_log = precision_recall_fscore_support(y_test, log_predict['predictions'], average=None)
 
-print('Accuracy is '+str(accuracy))
-print('Precision is '+str(precision))
-print('Recall is '+str(recall))
-print('F1 is '+str(f1))
-print('Support is '+str(support))
+print('Accuracy is '+str(accuracy_log))
+print('Precision is '+str(precision_log))
+print('Recall is '+str(recall_log))
+print('F1 is '+str(f1_log))
+print('Support is '+str(support_log))
 
 examination_df = pd.DataFrame({'text':texts[texts.index.isin(set(x_test.index))==True]['text'],
                                'rel':texts[texts.index.isin(set(x_test.index))==True]['rel']})
 
 examination_df = examination_df.merge(log_predict, left_index = True, right_index=True)
 
-def find_matching_rows(df1, df2):
-  """
-  Finds the indices of rows in df1 that are also present in df2.
 
-  Args:
-    df1: The first DataFrame.
-    df2: The second DataFrame.
+plt.figure(figsize=(8, 6))
+plt.hist(examination_df['zoro_prob'])
+plt.xlabel('Zoroastrian Likelihood')
+plt.ylabel('Number of instances')
+plt.title('Explained Variance by Different Principal Components')
+plt.grid()
+plt.show()
 
-  Returns:
-    A list of indices of the matching rows in df1.
-  """
+plt.figure(figsize=(8, 6))
+plt.scatter(vt_pca_df.iloc[:,0],vt_pca_df.iloc[:,1])
+plt.xlabel('PCA Component 1')
+plt.ylabel('PCA Component 2')
+plt.title('Zoroastrian Christian text comparison: most prominent PCA components visualized')
+plt.grid()
+plt.show()
 
-  # Convert DataFrames to NumPy arrays
-  arr1 = df1.values
-  arr2 = df2.values
 
-  # Find matching row indices
-  matching_indices = []
-  for i, row in enumerate(arr1):
-    if any(np.array_equal(row, arr2_row) for arr2_row in arr2):
-      matching_indices.append(i)
 
-  return matching_indices
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.pipeline import make_pipeline
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
