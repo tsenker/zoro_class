@@ -50,7 +50,7 @@ ct['rel'] = 'chrs'
 texts = pd.concat([zt,ct.sample(len(zt))],axis = 0).reset_index(drop=True).iloc[:,1:]
 texts.columns = ['text','source','rel']
 
-texts['text'] = texts['text'].str.split()
+texts['text'] = texts['text'].str.lower().str.split()
 
 # removing nonsense 2-char fragments
 stop_words = set(stopwords.words('english'))
@@ -63,6 +63,166 @@ texts['text'] = texts['text'].apply(lambda x: ' '.join(x)).str.lower()
 texts['text'] = texts['text'].apply(lambda x: whitespace_strip(remove_numbers(remove_punctuation(x))))
 
 
+# let's figure out what the most specific religious words are
+sw = texts['text'].str.split()
+word_freq = [i for j in sw for i in j]
+word_freq = pd.DataFrame({'wf':word_freq,}).groupby(['wf']).size().reset_index()
+word_freq.columns = ['word','count']
+word_freq = word_freq.sort_values(by = 'count', ascending = False).reset_index(drop = True)
+
+from collections import defaultdict
+
+word_freq = defaultdict(lambda: defaultdict(int))
+
+for text,rel in zip(texts['text'], texts['rel']):
+    for word in text.lower().split():
+        word_freq[rel][word] += 1
+
+word_freq = pd.DataFrame(word_freq).reset_index().fillna(0)
+word_freq.columns = ['word','zoro','chrs']
+word_freq['ratio'] = word_freq['zoro']/word_freq['chrs']
+word_freq['ratio'] = np.where(word_freq['ratio'] == np.inf,99999,word_freq['ratio'])
+
+religious_figures = ['mazda',
+                     'ahura',
+                     'yamaha',
+                     'zarathustra',
+                     'fra',
+                     'vas',
+                     'dallas',
+                     'hormazd',
+                     'pittman',
+                     'frosh',
+                     'zat',
+                     'ashishvangh',
+                     'audi',
+                     'haoma',
+                     'spenta',
+                     'amesha',
+                     'yacht',
+                     'fravashi',
+                     'wizard',
+                     'ameshaspands',
+                     'jamshid',
+                     'chordal',
+                     'jesus',
+                     'christ',
+                     'paul',
+                     'pharisee',
+                     'gentile',
+                     'paul',
+                     'simon',
+                     'pilate',
+                     'david',
+                     'mary',
+                     'herod',
+                     'phillip',
+                     'judas',
+                     'joseph',
+                     'isaiah',
+                     'elijah',
+                     'jacob',
+                     'peter',
+                     'abraham',
+                     'james',
+                     'disciple',
+                     'creator',
+                     'immortal',
+                     'meter',
+                     'protector']
+
+religious_values = ['religion',
+                    'rectitude',
+                    'powerful',
+                    'beneficient',
+                    'happiness',
+                    'prosperity',
+                    'amongst',
+                    'victorious',
+                    'wide',
+                    'data',
+                    'glorious',
+                    'bountiful',
+                    'protector',
+                    'excellence',
+                    'boon',
+                    'nonchalance',
+                    'corporeal',
+                    'heroic',
+                    'health',
+                    'divine',
+                    'smite',
+                    'undefile',
+                    'religious',
+                    'perfection',
+                    'swift',
+                    'famous',
+                    'adoration',
+                    'bliss',
+                    'virtuous',
+                    'aright',
+                    'friendship',
+                    'mindedness',
+                    'propitiation',
+                    'brotherhood',
+                    'protection',
+                    'intelligence',
+                    'real',
+                    'existence',
+                    'greatness',
+                    'efficacious',
+                    'omniscient',
+                    'hatred',
+                    'cruel',
+                    'vigour',
+                    'brilliant',
+                    'prosperous',
+                    'glorification',
+                    'triumphant',
+                    'invocation',
+                    'path',
+                    'best',
+                    'sacred',
+                    'courage',
+                    'goodness',
+                    'wicked',
+                    'humility',
+                    'conscience',
+                    'excellent',
+                    'wealth',
+                    'worth',
+                    'pure',
+                    'unclean',
+                    'command',
+                    'believe',
+                    'drink',
+                    'burn',
+                    'know',
+                    'begot',
+                    'baptize',
+                    'crucify',
+                    'lawful',
+                    'besought',
+                    'write',
+                    'cry',
+                    'depart',
+                    'die',
+                    'fall',
+                    'arise']
+
+specified_places_nationalities = ['iranian',
+                                  'jew',
+                                  'israel',
+                                  'church',
+                                  'synagogue',
+                                  'jerusalem',
+                                  'egypt',
+                                  'judaea',
+                                  'wilderness',
+                                  'country',
+                                  'pasture',
+                                  'universe']
+
 
 # let's lemmatize
 def lemma_helper(text):
@@ -73,6 +233,19 @@ def lemma_helper(text):
     return ' '.join(c)
 
 texts['text_l'] = texts['text'].apply(lambda x: lemma_helper(x))
+
+def replace_words(sentence):
+    words = sentence.split()
+    new_words = ['religious_figure' if word.lower() in set(religious_figures) else word for word in words]
+    new_words = ['religious_value' if word.lower() in set(religious_values) else word for word in new_words]     
+    new_words = ['place_or_nationality' if word.lower() in set(specified_places_nationalities) else word for word in new_words]          
+    return ' '.join(new_words)
+
+
+
+texts['text_l'] = texts['text_l'].apply(lambda x: replace_words(x))
+
+
 
 def get_ngrams(text, n):
   """
@@ -101,7 +274,7 @@ from sklearn.pipeline import Pipeline, FeatureUnion
 
 tfidf = TfidfVectorizer(stop_words='english')
 
-vectorizer = FeatureUnion([
+vectorizer_old = FeatureUnion([
     ('word_tfidf', TfidfVectorizer(
     analyzer='word',
     token_pattern=r'\w{1,}',
@@ -115,6 +288,16 @@ vectorizer = FeatureUnion([
     max_features=40000,
     ))
 ])
+
+vectorizer = FeatureUnion([
+    ('word_tfidf', TfidfVectorizer(
+    analyzer='word',
+    token_pattern=r'\w{1,}',
+    ngram_range=(1, 1),
+    max_features=40000,
+    ))
+])
+
 
 
 vectorizer.fit(texts['text_l'])
@@ -140,6 +323,14 @@ vt_pca_fit = pca_init.fit(vt_scaled)
 vt_pca = pca_init.fit_transform(vt_scaled)
 #vt_pca2 = PCA(n_components = 5).fit(vt.T)
 
+# Get feature names (words)
+feature_names = np.array(vectorizer.get_feature_names_out())
+
+# Find top words influencing each principal component
+for i, component in enumerate(pca_init.components_):
+    top_words = feature_names[np.argsort(-np.abs(component))[:5]]
+    print(f"Principal Component {i+1}: {top_words}")
+
 
 cumulative_variance = np.cumsum(vt_pca_fit.explained_variance_ratio_)
 
@@ -160,6 +351,8 @@ from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 from sklearn.metrics.pairwise import cosine_similarity
 
 vt_pca_df = pd.DataFrame(vt_pca)
+vt_pca_df.columns = vt_pca_df.columns.astype(str)
+
 
 x_test, x_train, y_test, y_train = train_test_split(vt_pca_df,y,test_size= 0.7)
 
@@ -266,13 +459,9 @@ examination_df_svm = pd.DataFrame({'text':texts[texts.index.isin(set(x_test.inde
 examination_df_svm = examination_df_svm.merge(svm_predict, left_index = True, right_index=True)
 
 
+union_misclass_idx = set(log_examination_df[log_examination_df['miss'] == 1].index) & set(nb_examination_df[nb_examination_df['miss'] == 1].index) & set(examination_df_svm[examination_df_svm['miss'] == 1].index)
 
-
-
-
-
-
-
+common_misclass_sentences = texts[texts.index.isin(union_misclass_idx)==True]
 
 
 
