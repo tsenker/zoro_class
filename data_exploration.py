@@ -316,23 +316,25 @@ vt_scaled = scaler.fit_transform(vectorized_text)
 
 
 from sklearn.decomposition import PCA
+from sklearn.decomposition import TruncatedSVD
 
-pca_init = PCA(n_components= 50)
-#vt_pca = pca_init.fit(vt.T)
-vt_pca_fit = pca_init.fit(vt_scaled)
-vt_pca = pca_init.fit_transform(vt_scaled)
-#vt_pca2 = PCA(n_components = 5).fit(vt.T)
+
+svd_init = TruncatedSVD(n_components = 50)
+
+vt_svd_fit = svd_init.fit(vt_scaled)
+vt_svd = svd_init.fit_transform(vt_scaled)
+
 
 # Get feature names (words)
 feature_names = np.array(vectorizer.get_feature_names_out())
 
 # Find top words influencing each principal component
-for i, component in enumerate(pca_init.components_):
+for i, component in enumerate(svd_init.components_):
     top_words = feature_names[np.argsort(-np.abs(component))[:5]]
     print(f"Principal Component {i+1}: {top_words}")
 
 
-cumulative_variance = np.cumsum(vt_pca_fit.explained_variance_ratio_)
+cumulative_variance = np.cumsum(vt_svd_fit.explained_variance_ratio_)
 
 # Plot cumulative explained variance
 plt.figure(figsize=(8, 6))
@@ -350,11 +352,11 @@ from sklearn.model_selection import  train_test_split
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 from sklearn.metrics.pairwise import cosine_similarity
 
-vt_pca_df = pd.DataFrame(vt_pca)
-vt_pca_df.columns = vt_pca_df.columns.astype(str)
+vt_svd_df = pd.DataFrame(vt_svd)
+vt_svd_df.columns = vt_svd_df.columns.astype(str)
 
 
-x_test, x_train, y_test, y_train = train_test_split(vt_pca_df,y,test_size= 0.7)
+x_test, x_train, y_test, y_train = train_test_split(vt_svd_df,y,test_size= 0.7)
 
 model_log = LogisticRegression()
 model_log.fit(x_train, y_train)
@@ -388,18 +390,18 @@ plt.grid()
 plt.show()
 
 
-vt_pca_df['rel'] = texts['rel']
-vt_pca_df['rel_bin'] = np.where(vt_pca_df['rel'] == 'chrs',1,0)
+vt_svd_df['rel'] = texts['rel']
+vt_svd_df['rel_bin'] = np.where(vt_svd_df['rel'] == 'chrs',1,0)
 
 colors = ['red', 'blue']
-group_colors = [colors[g] for g in vt_pca_df['rel_bin']]
+group_colors = [colors[g] for g in vt_svd_df['rel_bin']]
 
 
 plt.figure(figsize=(8, 6))
-plt.scatter(vt_pca_df.iloc[:,0],vt_pca_df.iloc[:,1], c=group_colors)
-plt.xlabel('PCA Component 1')
-plt.ylabel('PCA Component 2')
-plt.title('Zoroastrian Christian text comparison: most prominent PCA components visualized')
+plt.scatter(vt_svd_df.iloc[:,0],vt_svd_df.iloc[:,1], c=group_colors)
+plt.xlabel('SVD Component 1')
+plt.ylabel('SVD Component 2')
+plt.title('Zoroastrian Christian text comparison: most prominent SVD components visualized')
 plt.grid()
 plt.show()
 
@@ -459,12 +461,45 @@ examination_df_svm = pd.DataFrame({'text':texts[texts.index.isin(set(x_test.inde
 examination_df_svm = examination_df_svm.merge(svm_predict, left_index = True, right_index=True)
 
 
+# now let's put it all together
+
+nb_examination_df['miss'] = np.where(nb_examination_df['rel'] != nb_examination_df['predictions'],1,0)
+log_examination_df['miss'] = np.where(log_examination_df['rel'] != log_examination_df['predictions'],1,0)
+examination_df_svm['miss'] = np.where(examination_df_svm['rel'] != examination_df_svm['predictions'],1,0)
+
 union_misclass_idx = set(log_examination_df[log_examination_df['miss'] == 1].index) & set(nb_examination_df[nb_examination_df['miss'] == 1].index) & set(examination_df_svm[examination_df_svm['miss'] == 1].index)
 
-common_misclass_sentences = texts[texts.index.isin(union_misclass_idx)==True]
+common_misclass_sentences = pd.DataFrame({'text':texts[texts.index.isin(union_misclass_idx)==True]['text'],
+                                          'text_anon':texts[texts.index.isin(union_misclass_idx)==True]['text_l'],
+                                          'rel':texts[texts.index.isin(union_misclass_idx)==True]['rel'],
+                                          'prediction':log_examination_df[log_examination_df.index.isin(union_misclass_idx)==True]['predictions'],
+                                          'log_zoro_prob':log_examination_df[log_examination_df.index.isin(union_misclass_idx)==True]['zoro_prob'],
+                                          'log_chrs_prob':log_examination_df[log_examination_df.index.isin(union_misclass_idx)==True]['chrs_prob'],
+                                          'nb_zoro_prob':nb_examination_df[nb_examination_df.index.isin(union_misclass_idx)==True]['zoro_prob'],
+                                          'nb_chrs_prob':nb_examination_df[nb_examination_df.index.isin(union_misclass_idx)==True]['chrs_prob'],
+                                          'svm_zoro_prob':examination_df_svm[examination_df_svm.index.isin(union_misclass_idx)==True]['zoro_prob'],
+                                          'svm_chrs_prob':examination_df_svm[examination_df_svm.index.isin(union_misclass_idx)==True]['chrs_prob'],})
+
+# let's analyze the SVD decomposition qualitatively
+quantiles_used = [0.01,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.99]
+c1_range = np.quantile(vt_svd_df.iloc[:,0],quantiles_used)
+c2_range = np.quantile(vt_svd_df.iloc[:,1],quantiles_used)
+c3_range = np.quantile(vt_svd_df.iloc[:,2],quantiles_used)
+c4_range = np.quantile(vt_svd_df.iloc[:,3],quantiles_used)
+c5_range = np.quantile(vt_svd_df.iloc[:,4],quantiles_used)
 
 
 
+components = [1,2,3,4,5]
 
+for e in components:
+    print('THIS IS SVD COMPONENT '+str(e))
+    print('')
+    print('')
+    for i,j in zip(np.quantile(vt_svd_df.iloc[:,e - 1],quantiles_used),quantiles_used):
+        print('This is the '+str(100*j)+'th percentile text for this SVD component:')
+        print(texts[texts.index == np.argmin(abs(vt_svd_df.iloc[:,e - 1] - i))].reset_index(drop=True)['text'][0])
+        print('-------')
+    print('-------------------')
 
 
